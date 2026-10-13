@@ -7,3 +7,35 @@
 @media(max-width:760px){.sidebar{transform:translateX(-100%);width:240px;transition:transform .2s}.sidebar.mobile-open{transform:translateX(0)}.main-shell{margin-left:0}.menu-btn,.mobile-close{display:flex}.mobile-close{position:absolute;right:13px;top:34px}.topbar{height:66px;padding:0 18px}.crumb{gap:8px}.top-right{gap:9px}.saved-status{display:none}.top-right .small-avatar{display:none}.content{padding:25px 18px 18px}.page-heading h2{font-size:25px}.page-heading{align-items:flex-start}.page-heading>.btn{font-size:9px;padding:9px 11px}.eyebrow{font-size:8px;letter-spacing:1.3px}.page-heading p:not(.eyebrow){font-size:11px}.hero{padding:26px;min-height:276px}.hero-art{width:310px;right:-30px;opacity:.45}.hero h1{font-size:34px;max-width:290px}.hero .eyebrow{position:relative;z-index:2}.stats-row{margin:17px 0}.stats-row>div{padding:14px 10px;gap:8px}.stat-icon{width:32px;height:32px}.stat-icon svg{width:16px}.stats-row strong{font-size:22px}.stats-row section small{font-size:8px}.dashboard-grid{gap:15px;grid-template-columns:1.2fr 1fr}.card{padding:20px}.card-heading h3{font-size:13px}.badge{font-size:7px}.next-card .card-heading{flex-wrap:wrap}.focus-title{font-size:20px}.challenge-row{gap:10px}.challenge-tile{padding:16px;min-height:143px}.challenge-tile h3{font-size:12px}.challenge-tile p{font-size:8px}.challenge-tile>svg{right:12px;bottom:10px;width:15px}.section-title h3{font-size:16px}.section-title .text-btn{font-size:9px}.toast{left:50%;bottom:16px;width:max-content}.settings-grid{grid-template-columns:1fr}.quest-grid{gap:15px}.quest-card h3{font-size:21px}.quest-footer{flex-wrap:wrap}.journal-entry{gap:13px}.journal-summary .card{flex-wrap:wrap;gap:7px}.journal-summary span{width:100%}.journal-summary{gap:12px}.app-footer span span{display:none}.board-banner{padding:22px}.board-banner h3{font-size:21px}.stack-avatars span{width:35px;height:35px;font-size:15px}}
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr}.stats-row>div{flex-direction:column;align-items:flex-start;gap:7px}.stats-row strong{font-size:24px}.stat-icon{width:29px;height:29px}.hero-art{right:-95px;opacity:.32}.hero{padding:25px 22px}.hero h1{font-size:33px}.hero p{font-size:10px}.challenge-row{grid-template-columns:1fr}.challenge-tile{min-height:112px}.challenge-tile h3{font-size:15px;margin:9px 0 4px}.challenge-tile p{font-size:10px}.challenge-tile>div>svg{width:25px}.quest-grid{grid-template-columns:1fr}.advisor-grid{gap:12px}.advisor{padding:17px}.advisor h3{font-size:18px}.advisor small{font-size:9px}.advisor p{font-size:10px}.advisor-avatar{width:37px;height:37px;font-size:21px}.board-banner{display:block}.stack-avatars{margin-top:18px}.nova-tools{grid-template-columns:1fr}.message{max-width:96%}.messages{padding:17px}.chat-top{padding:17px}.privacy-line{font-size:8px}.meeting-grid{grid-template-columns:1fr}.challenge-detail{display:block}.challenge-cover{height:120px}.challenge-hero{padding:22px;gap:16px}.challenge-hero h3{font-size:20px}.journal-entry .card-heading{flex-wrap:wrap;gap:6px}.journal-entry h3{font-size:13px}.form-row{grid-template-columns:1fr;gap:0}.modal{padding:25px}.review-counts span{font-size:8px}.toolbar{flex-wrap:wrap}.toolbar input{max-width:100%}.page-heading{flex-wrap:wrap}.date-label{display:none}.task-footer{gap:10px}.card-heading{gap:10px}.file-row strong{font-size:10px}.stats-row small{white-space:nowrap}.section-title .eyebrow{font-size:7px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* First customers, reminders */
+.fc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.fc-grid>div{display:flex;flex-direction:column;gap:14px}
+.fc-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+.fc-actions .muted{font-size:11px}
+.fc-coach{display:flex;gap:8px;align-items:flex-start;background:#f4f1e8;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;margin-top:14px;white-space:pre-wrap}
+.fc-coach svg{flex-shrink:0;margin-top:2px;color:#b8874f}
+.fc-note{margin-top:18px;font-size:11px}
+.fc-offer h3{font-family:Georgia,serif;font-size:20px;font-weight:400;margin:4px 0 12px}
+.fc-offer .badge{margin:0}
+.fc-dl{display:grid;grid-template-columns:70px 1fr;gap:6px 12px;font-size:12px;line-height:1.55;margin:0 0 10px}
+.fc-dl dt{color:#8d9683;font-weight:600}
+.fc-dl dd{margin:0;white-space:pre-wrap}
+.fc-row-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.fc-row-actions .text-btn{margin-top:0}
+.fc-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 16px;align-items:end}
+.fc-board{display:grid;grid-template-columns:repeat(6,minmax(180px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.fc-column{padding:14px;display:flex;flex-direction:column;gap:10px;min-height:160px}
+.fc-column>h3{font-size:12px;display:flex;justify-content:space-between;margin:0 0 4px}
+.fc-column>h3 span{color:#8d9683;font-weight:400}
+.fc-contact{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:12px;background:#fcfbf8}
+.fc-contact.due{border-color:#e99462;box-shadow:0 0 0 2px #fbe5d6}
+.fc-contact small{color:#8d9683;font-size:10px}
+.fc-contact p{margin:0;font-size:11px;line-height:1.5}
+.fc-contact select{font-size:11px;padding:5px 6px}
+.fc-edit{margin-top:6px}
+.fc-message{background:#f4f1e8;border-radius:8px;padding:10px;white-space:pre-wrap;font-size:11px;line-height:1.55}
+.fc-toggle{display:flex;gap:10px;align-items:flex-start;font-size:12px;margin:10px 0;cursor:pointer}
+.fc-toggle input{width:auto;margin-top:2px}
+.fc-banner{display:flex;align-items:center;gap:12px;width:100%;margin-top:18px;text-align:left;cursor:pointer;font-size:13px;color:inherit}
+.fc-banner span{flex:1}
+@media (max-width:900px){.fc-grid,.fc-form-grid{grid-template-columns:1fr}}

@@ -3,8 +3,8 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "functions": {
-    "app/api/ai/route.ts": {
-      "maxDuration": 60
-    }
-  }
+    "app/api/ai/route.ts": { "maxDuration": 60 },
+    "app/api/cron/daily/route.ts": { "maxDuration": 60 }
+  },
+  "crons": [{ "path": "/api/cron/daily", "schedule": "0 12 * * *" }]
 }

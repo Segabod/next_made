@@ -11,6 +11,8 @@ A standard Next.js App Router version of the private NextMade platform. The orig
 - Supabase migration with row-level security, restricted grants, atomic workspace revisions and daily AI limits.
 - Private file upload/download/delete, with a 4 MB evidence limit.
 - Personal workspace JSON import into a fresh account, export, and deletion.
+- First customers workspace: offer builder (Nova can draft a testable offer), a customer conversation tracker (contacted → paid) with Nova-drafted outreach, and an experiment log.
+- Email reminders (due commitments, customer follow-ups, experiment deadlines, a nudge after 3 quiet days) and a Monday weekly progress letter with a short Nova note, sent through Resend by a daily Vercel Cron job (`/api/cron/daily`, 12:00 UTC). Members switch each on or off in Settings and can send themselves a preview.
 - Vercel project configuration and GitHub Actions checks.
 
 ## Local development
@@ -28,18 +30,15 @@ No service-role key is needed or accepted by the application. The publishable ke
 
 1. Create a NEW Supabase project. Do not run the initial migration on a database with existing tables of the same names.
 2. Run `supabase/001_nextmade.sql` once in its SQL Editor. It creates tables, RPCs, access rules and the private `evidence` bucket.
-3. Disable public sign-ups in Supabase Auth. Add your pilot account in Authentication → Users and set or reset its password there. The app has no public registration flow.
-4. Grant that account pilot access in the SQL Editor, using its real email:
+3. Run `supabase/002_open_signup.sql` once. Anyone who signs up gets workspace access automatically as soon as they confirm their email.
+4. In Supabase → Authentication → Sign In / Providers → Email: keep sign-ups **enabled** and **Confirm email** turned on.
+5. In Supabase → Authentication → URL Configuration: set Site URL to your `APP_ORIGIN` and add `APP_ORIGIN/**` to Redirect URLs (for example `https://nextmadevercelgithub.vercel.app/**`).
+6. In Supabase → Authentication → Emails → SMTP Settings: enable custom SMTP with Resend (host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key, sender = an address on your Resend-verified domain). Supabase's built-in mailer only delivers to project team members and is heavily rate limited, so this step is what lets any user receive confirmation and reset emails.
+7. Copy the project URL and publishable key into environment variables. Do not use a secret or service-role key. Keep the `evidence` bucket private.
 
-```sql
-insert into public.pilot_access(user_id)
-select id from auth.users where email = 'YOUR_REAL_EMAIL'
-on conflict do nothing;
-```
+### Accounts
 
-5. Copy the project URL and publishable key into environment variables. Do not use a secret or service-role key. Keep the `evidence` bucket private.
-
-For each invited member, create their account and add their ID to `pilot_access`. Circle invite codes alone do not grant pilot access. Removing a row from `pilot_access` stops subsequent app and storage access for that user.
+Visitors create an account at `/login` (name, email, password). Supabase emails a confirmation link; after confirming they sign in. "Forgot password?" emails a reset link that opens `/reset-password`. To return to invite-only access, drop the `nextmade_grant_on_confirm` trigger and grant access manually through `pilot_access`.
 
 ## GitHub publication
 
@@ -58,8 +57,16 @@ Set these server variables for the relevant environment:
 | `SUPABASE_URL` | Your Supabase HTTPS project URL |
 | `SUPABASE_PUBLISHABLE_KEY` | Its publishable (or legacy anon) key, not a service key |
 | `APP_ORIGIN` | The exact HTTPS origin visitors will use, without a path |
-| `OPENAI_API_KEY` | Optional, only when activating AI |
-| `OPENAI_MODEL` | Optional; defaults to `gpt-4.1-mini` |
+| `RESEND_API_KEY` | Resend API key, for reminders and weekly letters |
+| `EMAIL_FROM` | Sender on your Resend-verified domain, e.g. `NextMade <hello@mail.yourdomain.com>` |
+| `CRON_SECRET` | Random string; Vercel Cron sends it so only the scheduler can trigger `/api/cron/daily` |
+| `SUPABASE_SECRET_KEY` | Used ONLY by the scheduled reminder job to read members' due items and emails (`lib/admin.ts`). Member-facing routes never use it. `SUPABASE_SERVICE_ROLE_KEY` also works |
+| `NOVA_PROVIDER` | Optional: `anthropic`, `gemini`, `gateway` or `openai`. When unset, the first configured key below is used, in that order |
+| `NOVA_MODEL` | Optional model override for the chosen provider |
+| `ANTHROPIC_API_KEY` | Claude (default `claude-haiku-4-5`) |
+| `GEMINI_API_KEY` | Google AI Studio key (default `gemini-2.5-flash`; free tier available, note Google's free-tier data terms) |
+| `AI_GATEWAY_API_KEY` | Vercel AI Gateway key (default `anthropic/claude-haiku-4.5`) |
+| `OPENAI_API_KEY` | OpenAI (default `gpt-4.1-mini`, or `OPENAI_MODEL`) |
 
 The initial Vercel deployment can render the setup/sign-in screen without these values. It will not expose the landing page or saved workspace and is not a fully configured working deployment. After its final domain is assigned, set `APP_ORIGIN` to that domain and redeploy. Preview deployments need their own configured origin if login or mutation testing is required. Requests from an unexpected origin are rejected.
 
@@ -87,4 +94,4 @@ Suggested integration checks after configuration: sign in as two invited account
 
 ## Remaining integrations
 
-Nova and AI board reasoning activate only with an authorized OpenAI key. Browser dictation and speech playback depend on browser support. Realtime voice, conferencing participation, scheduled reminders and external calendar sync are not integrated. No simulated replies or fabricated community activity are supplied.
+Nova and AI board reasoning activate when any one supported AI provider key is set (see `lib/ai.ts`). Browser dictation and speech playback depend on browser support. Realtime voice, conferencing participation and external calendar sync are not integrated yet. No simulated replies or fabricated community activity are supplied.
