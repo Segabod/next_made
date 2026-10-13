@@ -1,0 +1,2 @@
+export function safeReturn(value:string){try{const u=new URL(value,'https://app.local');return u.origin==='https://app.local'&&u.pathname.startsWith('/')&&!u.pathname.startsWith('/login')?u.pathname+u.search:'/workspace';}catch{return '/workspace';}}
+export function originMatches(origin:string|null,configured:string|undefined){if(!origin||!configured)return false;try{return origin===new URL(configured).origin;}catch{return false;}}
