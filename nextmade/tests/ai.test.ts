@@ -16,7 +16,7 @@ test('NOVA_PROVIDER wins, but only when its key exists', () => {
   env({NOVA_PROVIDER: 'unknown', ANTHROPIC_API_KEY: 'a'}); assert.equal(activeProvider(), null);
 });
 test('model defaults and overrides', () => {
-  env({}); assert.equal(activeModel('gemini'), 'gemini-2.5-flash');
+  env({}); assert.equal(activeModel('gemini'), 'gemini-3.5-flash-lite');
   env({OPENAI_MODEL: 'x'}); assert.equal(activeModel('openai'), 'x');
   env({NOVA_MODEL: 'y', OPENAI_MODEL: 'x'}); assert.equal(activeModel('openai'), 'y');
 });

@@ -15,7 +15,7 @@ const KEYS: Record<Provider, string> = {
 
 const DEFAULT_MODELS: Record<Provider, string> = {
   anthropic: 'claude-haiku-4-5',
-  gemini: 'gemini-2.5-flash',
+  gemini: 'gemini-3.5-flash-lite',
   gateway: 'anthropic/claude-haiku-4.5',
   openai: 'gpt-4.1-mini',
 };
@@ -76,7 +76,13 @@ export async function generateRich({ system, input, maxTokens = 1800, timeoutMs 
   const model = activeModel(p);
   const signal = AbortSignal.timeout(timeoutMs);
   const post = async (url: string, headers: Record<string, string>, body: unknown) => {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body), signal });
+    let r: Response;
+    try {
+      r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body), signal });
+    } catch (e) {
+      console.error(`Nova provider ${p} (${model}) did not answer within ${timeoutMs} ms:`, e instanceof Error ? e.message : e);
+      throw e;
+    }
     if (!r.ok) {
       const detail = await r.text().catch(() => '');
       console.error(`Nova provider ${p} (${model}) returned ${r.status}: ${detail.slice(0, 500)}`);
@@ -98,7 +104,11 @@ export async function generateRich({ system, input, maxTokens = 1800, timeoutMs 
     const r = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { 'x-goog-api-key': key }, {
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: 'user', parts: [{ text: input }] }],
-      generationConfig: { maxOutputTokens: Math.max(maxTokens, 4096) },
+      generationConfig: {
+        maxOutputTokens: Math.max(maxTokens, 4096),
+        // Gemini 3+ models think by default, which can push replies past the time limit; keep it light.
+        ...(/^gemini-([3-9]|\d\d)/.test(model) ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
+      },
       ...(research ? { tools: [{ google_search: {} }] } : {}),
     });
     text = (r.candidates?.[0]?.content?.parts || []).map((x: any) => x.text || '').join('');
