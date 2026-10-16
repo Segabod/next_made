@@ -46,10 +46,11 @@ export default function Login({ready}: {ready: boolean}) {
       }
       if (mode === 'signup') {
         if (f.password !== f.confirm) throw new Error('The two passwords do not match.');
-        await post('/api/auth/signup', {name: f.name, email: f.email, password: f.password});
+        const res: any = await post('/api/auth/signup', {name: f.name, email: f.email, password: f.password});
+        if (res?.signedIn) { location.assign('/workspace'); return; }
         setPendingEmail(f.email);
         setMode('signin');
-        setNotice(`Almost there. We sent a confirmation link to ${f.email}. Open it, then sign in here.`);
+        setNotice(res?.confirm === false ? 'Your account is ready. Sign in to enter NextMade.' : `Almost there. We sent a confirmation link to ${f.email}. Open it, then sign in here.`);
         return;
       }
       await post('/api/auth/recover', {email: f.email});
@@ -70,7 +71,7 @@ export default function Login({ready}: {ready: boolean}) {
   }
 
   const title = mode === 'signup' ? 'Start your next chapter.' : mode === 'forgot' ? 'Reset your password.' : 'Welcome back.';
-  const intro = mode === 'signup' ? 'Create your free NextMade account. We will email you a link to confirm it.' : mode === 'forgot' ? 'Enter your account email and we will send you a reset link.' : 'Sign in to enter your NextMade workspace.';
+  const intro = mode === 'signup' ? 'Create your free NextMade account and start right away.' : mode === 'forgot' ? 'Enter your account email and we will send you a reset link.' : 'Sign in to enter your NextMade workspace.';
   const action = mode === 'signup' ? (busy ? 'Creating account…' : 'Create account') : mode === 'forgot' ? (busy ? 'Sending…' : 'Send reset link') : (busy ? 'Signing in…' : 'Enter NextMade');
 
   return <main style={{maxWidth: 430, margin: '8vh auto', padding: 28}}>
