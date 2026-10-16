@@ -78,7 +78,7 @@ Set these server variables for the relevant environment:
 | `NOVA_PROVIDER` | Optional: `anthropic`, `gemini`, `gateway` or `openai`. When unset, the first configured key below is used, in that order |
 | `NOVA_MODEL` | Optional model override for the chosen provider |
 | `ANTHROPIC_API_KEY` | Claude (default `claude-haiku-4-5`) |
-| `GEMINI_API_KEY` | Google AI Studio key (default `gemini-2.5-flash`; free tier available, note Google's free-tier data terms) |
+| `GEMINI_API_KEY` | Google AI Studio key (default `gemini-3.5-flash-lite`; free tier available, note Google's free-tier data terms) |
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway key (default `anthropic/claude-haiku-4.5`) |
 | `OPENAI_API_KEY` | OpenAI (default `gpt-4.1-mini`, or `OPENAI_MODEL`) |
 
