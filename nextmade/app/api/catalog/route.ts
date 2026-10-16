@@ -93,6 +93,7 @@ export async function POST(req: Request) {
     const id = await rpc('add_catalog_entry', { entry: { ...entry, shared: b.shared } });
     return json({ id, researched: research });
   } catch (e) {
+    if (e instanceof AiError && e.status === 429) return json({ error: 'Nova is at its usage limit, try again later.' }, 429);
     if (e instanceof AiError && e.status) return json({ error: 'The AI service could not complete this research.' }, 502);
     if ((e as any)?.status) return json({ error: 'Could not save this research. You may have reached your monthly limit.' }, 503);
     return json({ error: 'Research timed out. Please try again.' }, 502);
