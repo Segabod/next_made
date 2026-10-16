@@ -10,6 +10,70 @@ export const stageLabels: Record<(typeof stages)[number], string> = {
 };
 const short = z.string().max(500),
   id = z.string().min(1).max(100);
+const long = z.string().max(20000);
+const source = z.object({ title: z.string().max(300), url: z.string().max(2000) });
+export const founderStages = ['exploring', 'have-idea', 'building', 'selling'] as const;
+export const founderStageLabels: Record<(typeof founderStages)[number], string> = {
+  exploring: 'Looking for an idea',
+  'have-idea': 'I have an idea',
+  building: 'Already building',
+  selling: 'Already selling',
+};
+const founderSchema = z.object({
+  edge: z.string().max(2000),
+  skills: z.string().max(2000),
+  market: z.string().max(1000),
+  audience: z.string().max(1000),
+  problem: z.string().max(1000),
+  stage: z.enum(founderStages),
+  hours: z.string().max(60),
+  budget: z.string().max(60),
+  goal: z.string().max(1000),
+  links: z.string().max(1000),
+  archetype: z.string().max(40),
+  quiz: z.record(z.string().max(40), z.number().min(-5).max(5)).default({}),
+});
+export const blankFounder: z.infer<typeof founderSchema> = {
+  edge: '', skills: '', market: '', audience: '', problem: '', stage: 'exploring', hours: '', budget: '', goal: '', links: '', archetype: '', quiz: {},
+};
+const ideaSchema = z.object({
+  id,
+  title: short,
+  oneLiner: z.string().max(2000),
+  origin: z.enum(['mine', 'feed']),
+  status: z.enum(['saved', 'exploring', 'committed', 'dropped']),
+  rating: z.enum(['', 'love', 'interesting', 'meh']).default(''),
+  report: long.default(''),
+  sources: z.array(source).max(30).default([]),
+  goalId: z.string().max(100).default(''),
+  created: z.string().max(40),
+  updated: z.string().max(40),
+});
+const runSchema = z.object({
+  id,
+  agent: z.string().max(60),
+  title: short,
+  ideaId: z.string().max(100),
+  goalId: z.string().max(100),
+  input: z.string().max(4000),
+  output: long,
+  sources: z.array(source).max(30).default([]),
+  created: z.string().max(40),
+});
+const feedItemSchema = z.object({
+  title: short,
+  oneLiner: z.string().max(2000),
+  model: z.string().max(120),
+  whyYou: z.string().max(1000),
+  firstStep: z.string().max(1000),
+  score: z.number().min(0).max(10),
+});
+const sprintSchema = z.object({ started: z.string().max(30), ideaId: z.string().max(100), goalId: z.string().max(100), done: z.array(z.string().max(40)).max(20) });
+export type Idea = z.infer<typeof ideaSchema>;
+export type Run = z.infer<typeof runSchema>;
+export type FeedItem = z.infer<typeof feedItemSchema>;
+export type Founder = z.infer<typeof founderSchema>;
+export type Source = z.infer<typeof source>;
 export const stateSchema = z
   .object({
     profile: z.object({
@@ -142,6 +206,11 @@ export const stateSchema = z
       .max(200)
       .default([]),
     challenges: z.array(id).max(100),
+    founder: founderSchema.default(blankFounder),
+    ideas: z.array(ideaSchema).max(150).default([]),
+    runs: z.array(runSchema).max(150).default([]),
+    feed: z.object({ day: z.string().max(30), items: z.array(feedItemSchema).max(12) }).default({ day: '', items: [] }),
+    sprint: sprintSchema.nullable().default(null),
     files: z.array(z.object({ id, name: short, size: z.number().nonnegative(), created: z.string().max(40) })).max(100),
   })
   .strict();
@@ -159,6 +228,11 @@ export function emptyWorkspace(name = ''): Workspace {
     contacts: [],
     experiments: [],
     challenges: [],
+    founder: { ...blankFounder, quiz: {} },
+    ideas: [],
+    runs: [],
+    feed: { day: '', items: [] },
+    sprint: null,
     files: [],
   };
 }
@@ -167,7 +241,7 @@ export function normalize(raw: unknown, name = ''): Workspace {
   const base = emptyWorkspace(name);
   if (!raw || typeof raw !== 'object') return base;
   const r = raw as any;
-  const merged = { ...base, ...r, profile: { ...base.profile, ...(r.profile || {}) } };
+  const merged = { ...base, ...r, profile: { ...base.profile, ...(r.profile || {}) }, founder: { ...base.founder, ...(r.founder || {}) } };
   const parsed = stateSchema.safeParse(merged);
   return parsed.success ? parsed.data : (merged as Workspace);
 }
@@ -239,7 +313,9 @@ export function points(s: Workspace) {
     s.decisions.filter((d) => d.approved).length * 10 +
     s.contacts.length * 3 +
     s.contacts.filter((c) => c.stage === 'paid').length * 50 +
-    s.experiments.filter((x) => x.status !== 'running').length * 10
+    s.experiments.filter((x) => x.status !== 'running').length * 10 +
+    (s.runs || []).length * 5 +
+    (s.ideas || []).filter((i) => i.report).length * 10
   );
 }
 export function localDay(date = new Date()) {
@@ -301,4 +377,42 @@ export function weeklyStats(s: Workspace, now = new Date()) {
     paid: s.contacts.filter((c) => c.stage === 'paid' && inWeek(c.updated)).length,
     experimentsClosed: s.experiments.filter((x) => x.status !== 'running' && inWeek(x.updated || x.created)).length,
   };
+}
+
+/** Days (YYYY-MM-DD, local) on which the member did something, with a count per day. */
+export function activityDays(s: Workspace) {
+  const map: Record<string, number> = {};
+  const add = (iso: string) => {
+    if (!iso) return;
+    const t = Date.parse(iso.length === 10 ? iso + 'T12:00:00' : iso);
+    if (Number.isNaN(t)) return;
+    const k = localDay(new Date(t));
+    map[k] = (map[k] || 0) + 1;
+  };
+  s.logs.forEach((l) => add(l.created));
+  (s.runs || []).forEach((r) => add(r.created));
+  (s.ideas || []).forEach((i) => add(i.updated || i.created));
+  s.contacts.forEach((c) => add(c.updated || c.created));
+  s.experiments.forEach((x) => add(x.updated || x.created));
+  s.decisions.forEach((d) => add(d.created));
+  s.goals.forEach((g) => add(g.created));
+  return map;
+}
+/** Consecutive active days ending today (or yesterday, so a streak survives until the day is over). */
+export function streak(days: Record<string, number>, today = new Date()) {
+  const d = new Date(today);
+  if (!days[localDay(d)]) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (days[localDay(d)]) {
+    n++;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
+/** Keep a workspace under the 1 MB storage limit by dropping the oldest agent outputs first. */
+export function fitWorkspace(s: Workspace, budget = 900000): Workspace {
+  let next = s;
+  while (JSON.stringify(next).length > budget && next.runs.length) next = { ...next, runs: next.runs.slice(0, -1) };
+  return next;
 }

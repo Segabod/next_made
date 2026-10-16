@@ -13,6 +13,13 @@ A standard Next.js App Router version of the private NextMade platform. The orig
 - Personal workspace JSON import into a fresh account, export, and deletion.
 - First customers workspace: offer builder (Nova can draft a testable offer), a customer conversation tracker (contacted → paid) with Nova-drafted outreach, and an experiment log.
 - Email reminders (due commitments, customer follow-ups, experiment deadlines, a nudge after 3 quiet days) and a Monday weekly progress letter with a short Nova note, sent through Resend by a daily Vercel Cron job (`/api/cron/daily`, 12:00 UTC). Members switch each on or off in Settings and can send themselves a preview.
+- Ideas: an idea of the day and a daily feed of six ideas matched to the member's founder profile, saved ideas, and a full validation report per idea (pitch, who it's for, gap, why now, real pain quotes, competitors, reasons to build and not, demands, value ladder, napkin math, first steps, rating). Reports use live web search with cited sources when the AI provider supports it (Gemini, Claude or OpenAI keys; not the AI Gateway).
+- Agents: 20 focused Nova runs across Decide, Offer, Build and Sell. Each output is saved to the member's files and linked to an idea or project; build plans can be turned into commitments.
+- About me: founder profile (edge, skills, market, audience, stage, time, budget, goals) with profile strength, and a 10-question builder style quiz.
+- Project hub for every quest: where you left off, next tasks, activity heatmap and streak, files, context, and a copyable briefing for any AI tool.
+- My stuff: one library for projects, ideas, chats, research, founder fits, stress tests and agent outputs.
+- Launch Sprint: a guided 7-day path from idea to business that creates a project and links each day to the right agent.
+- Feedback widget, Build gallery (members share launched projects) and a builder toolkit of useful links.
 - Vercel project configuration and GitHub Actions checks.
 
 ## Local development
@@ -30,7 +37,7 @@ No service-role key is needed or accepted by the application. The publishable ke
 
 1. Create a NEW Supabase project. Do not run the initial migration on a database with existing tables of the same names.
 2. Run `supabase/001_nextmade.sql` once in its SQL Editor. It creates tables, RPCs, access rules and the private `evidence` bucket.
-3. Run `supabase/002_open_signup.sql` once. Anyone who signs up gets workspace access automatically as soon as they confirm their email.
+3. Run `supabase/002_open_signup.sql` once, then `supabase/003_feedback_gallery.sql` once (feedback and Build gallery tables). Anyone who signs up gets workspace access automatically as soon as they confirm their email.
 4. In Supabase → Authentication → Sign In / Providers → Email: keep sign-ups **enabled** and **Confirm email** turned on.
 5. In Supabase → Authentication → URL Configuration: set Site URL to your `APP_ORIGIN` and add `APP_ORIGIN/**` to Redirect URLs (for example `https://nextmadevercelgithub.vercel.app/**`).
 6. In Supabase → Authentication → Emails → SMTP Settings: enable custom SMTP with Resend (host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key, sender = an address on your Resend-verified domain). Supabase's built-in mailer only delivers to project team members and is heavily rate limited, so this step is what lets any user receive confirmation and reset emails.
