@@ -39,3 +39,17 @@ export async function membersWithWorkspaces() {
     .filter((w) => allowed.has(w.user_id) && users[w.user_id]?.email && users[w.user_id].confirmed)
     .map((w) => ({ userId: w.user_id as string, email: users[w.user_id].email, name: users[w.user_id].name, data: w.data }));
 }
+
+/** Privileged write for scheduled jobs only (the daily catalog entries). */
+export async function adminWrite(path: string, method: string, body: unknown) {
+  const { url } = config();
+  const key = adminKey();
+  const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+  if (key.split('.').length === 3) headers.Authorization = 'Bearer ' + key;
+  const r = await fetch(url + path, { method, headers, body: JSON.stringify(body), cache: 'no-store', signal: AbortSignal.timeout(20000) });
+  if (!r.ok) throw new Error(`Supabase admin write failed (${r.status}) for ${path.split('?')[0]}: ${(await r.text().catch(() => '')).slice(0, 300)}`);
+  return r.status === 204 ? null : r.json();
+}
+export async function adminRead(path: string) {
+  return admin(path);
+}

@@ -4,6 +4,7 @@ import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
 import { Check, Copy, ExternalLink } from 'lucide-react';
 import { fitWorkspace, localDay, type Idea, type Run, type Source, type Workspace } from './domain';
 import { agentById } from './catalog';
+import type { PlanInfo } from './plans';
 
 export const uid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
@@ -22,6 +23,8 @@ export type Ctx = {
   focus: Focus;
   call: (body: Record<string, unknown>) => Promise<AiResult | null>;
   firstName: string;
+  plan: PlanInfo & { requested?: boolean; ready?: boolean };
+  refreshPlan: () => void;
 };
 
 export const values = (e: FormEvent<HTMLFormElement>) => {

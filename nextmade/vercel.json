@@ -4,7 +4,14 @@
   "installCommand": "npm install",
   "functions": {
     "app/api/ai/route.ts": { "maxDuration": 60 },
-    "app/api/cron/daily/route.ts": { "maxDuration": 60 }
+    "app/api/catalog/route.ts": { "maxDuration": 60 },
+    "app/api/cron/daily/route.ts": { "maxDuration": 60 },
+    "app/api/cron/catalog/route.ts": { "maxDuration": 60 }
   },
-  "crons": [{ "path": "/api/cron/daily", "schedule": "0 12 * * *" }]
+  "crons": [
+    { "path": "/api/cron/daily", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/catalog?kind=idea", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/catalog?kind=trend", "schedule": "10 10 * * *" },
+    { "path": "/api/cron/catalog?kind=niche", "schedule": "20 10 * * *" }
+  ]
 }
