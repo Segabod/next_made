@@ -38,7 +38,7 @@ No service-role key is needed or accepted by the application. The publishable ke
 1. Create a NEW Supabase project. Do not run the initial migration on a database with existing tables of the same names.
 2. Run `supabase/001_nextmade.sql` once in its SQL Editor. It creates tables, RPCs, access rules and the private `evidence` bucket.
 3. Run `supabase/002_open_signup.sql` once, then `supabase/003_feedback_gallery.sql` once (feedback and Build gallery tables). Anyone who signs up gets workspace access automatically as soon as they confirm their email.
-4. In Supabase → Authentication → Sign In / Providers → Email: keep sign-ups **enabled** and **Confirm email** turned on.
+4. In Supabase → Authentication → Sign In / Providers → Email: keep sign-ups **enabled**. For instant access (members sign in straight after creating an account), turn **Confirm email** OFF and run `supabase/004_instant_access.sql` once. To require email confirmation instead, leave Confirm email on and skip 004.
 5. In Supabase → Authentication → URL Configuration: set Site URL to your `APP_ORIGIN` and add `APP_ORIGIN/**` to Redirect URLs (for example `https://nextmadevercelgithub.vercel.app/**`).
 6. In Supabase → Authentication → Emails → SMTP Settings: enable custom SMTP with Resend (host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key, sender = an address on your Resend-verified domain). Supabase's built-in mailer only delivers to project team members and is heavily rate limited, so this step is what lets any user receive confirmation and reset emails.
 7. Copy the project URL and publishable key into environment variables. Do not use a secret or service-role key. Keep the `evidence` bucket private.
