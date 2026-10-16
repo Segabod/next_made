@@ -126,7 +126,7 @@ export async function POST(req: Request) {
   } catch (e) {
     if (e instanceof AiError && e.status)
       return Response.json(
-        { error: e.status === 429 ? 'Nova is busy right now (provider rate limit). Please try again in a minute.' : 'The AI service could not complete this session. Your saved work is unchanged.' },
+        { error: e.status === 429 ? 'Nova is at its usage limit, try again later.' : 'The AI service could not complete this session. Your saved work is unchanged.' },
         { status: 502 },
       );
     return Response.json({ error: 'Nova’s connection timed out. Please try again; no actions were changed.' }, { status: 502 });
