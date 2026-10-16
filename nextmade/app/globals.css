@@ -194,3 +194,4 @@ p.nm-hint{display:block;margin-top:10px}
 .nm-nav-wrap .nav-item{padding:7px 14px}
 .nm-nav-section{padding:9px 14px 3px}
 .sidebar .workspace-label{margin-bottom:6px}
+.brand{font-family:var(--font-brand),Arial,Helvetica,sans-serif;letter-spacing:-1.4px}.brand .brand-mark{display:block;width:32px;height:32px;flex-shrink:0;background:none;border-radius:0;padding:0;fill:none;stroke:currentColor;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}.brand .brand-mark-rise{stroke:#dc7756}.brand .brand-period{color:#dc7756;margin-left:0}
