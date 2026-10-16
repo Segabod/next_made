@@ -19,6 +19,12 @@ A standard Next.js App Router version of the private NextMade platform. The orig
 - Project hub for every quest: where you left off, next tasks, activity heatmap and streak, files, context, and a copyable briefing for any AI tool.
 - My stuff: one library for projects, ideas, chats, research, founder fits, stress tests and agent outputs.
 - Launch Sprint: a guided 7-day path from idea to business that creates a project and links each day to the right agent.
+- Browse: a shared catalog of researched Ideas, Trends and Niches with search, filters (market, type, high scores, build difficulty, source, relevant in Canada), sorting, scores, saved entries and a For you tab matched to the founder profile. A daily Vercel Cron job adds one NextMade idea, trend and niche (10:00 to 10:20 UTC); members can research their own and share it with the community.
+- NextMade Pro: Free and Pro plans enforced in the database (Nova sessions per day, catalog archive, research runs, live offer pages, office hours requests, AI keys), an upgrade page with usage, and a founding-member request. Billing is not wired yet; Pro is granted by hand (see 005).
+- Connect your AI (Pro): personal keys (hashed) and an MCP endpoint at `/api/mcp` so Claude, Cursor and other MCP clients can read the founder profile, catalog, ideas and projects, and add ideas, commitments and progress notes on request.
+- Offer pages: public smoke-test pages at `/p/<address>` with a waitlist form; sign-ups move into First customers in one click. Free has 1 live page, Pro 10.
+- Office hours: members apply to mentor (approved by the team), others request sessions, mentors accept with a reply and booking link.
+- Funding & perks: curated Canadian grants, loans and supports with a Nova fit check, and startup credit programmes with a Pro perk planner.
 - Feedback widget, Build gallery (members share launched projects) and a builder toolkit of useful links.
 - Vercel project configuration and GitHub Actions checks.
 
@@ -37,7 +43,7 @@ No service-role key is needed or accepted by the application. The publishable ke
 
 1. Create a NEW Supabase project. Do not run the initial migration on a database with existing tables of the same names.
 2. Run `supabase/001_nextmade.sql` once in its SQL Editor. It creates tables, RPCs, access rules and the private `evidence` bucket.
-3. Run `supabase/002_open_signup.sql` once, then `supabase/003_feedback_gallery.sql` once (feedback and Build gallery tables). Anyone who signs up gets workspace access automatically as soon as they confirm their email.
+3. Run `supabase/002_open_signup.sql` once, then `supabase/003_feedback_gallery.sql` once (feedback and Build gallery tables), then `supabase/005_discover_pro_growth.sql` once (Browse, plans, AI keys, offer pages, office hours). Anyone who signs up gets workspace access automatically as soon as they confirm their email.
 4. In Supabase → Authentication → Sign In / Providers → Email: keep sign-ups **enabled**. For instant access (members sign in straight after creating an account), turn **Confirm email** OFF and run `supabase/004_instant_access.sql` once. To require email confirmation instead, leave Confirm email on and skip 004.
 5. In Supabase → Authentication → URL Configuration: set Site URL to your `APP_ORIGIN` and add `APP_ORIGIN/**` to Redirect URLs (for example `https://nextmadevercelgithub.vercel.app/**`).
 6. In Supabase → Authentication → Emails → SMTP Settings: enable custom SMTP with Resend (host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key, sender = an address on your Resend-verified domain). Supabase's built-in mailer only delivers to project team members and is heavily rate limited, so this step is what lets any user receive confirmation and reset emails.
@@ -68,6 +74,7 @@ Set these server variables for the relevant environment:
 | `EMAIL_FROM` | Sender on your Resend-verified domain, e.g. `NextMade <hello@mail.yourdomain.com>` |
 | `CRON_SECRET` | Random string; Vercel Cron sends it so only the scheduler can trigger `/api/cron/daily` |
 | `SUPABASE_SECRET_KEY` | Used ONLY by the scheduled reminder job to read members' due items and emails (`lib/admin.ts`). Member-facing routes never use it. `SUPABASE_SERVICE_ROLE_KEY` also works |
+| `NEXT_PUBLIC_PRO_PRICE` | Optional text for the Pro price on the upgrade page, e.g. `CA$15 a month for founding members` |
 | `NOVA_PROVIDER` | Optional: `anthropic`, `gemini`, `gateway` or `openai`. When unset, the first configured key below is used, in that order |
 | `NOVA_MODEL` | Optional model override for the chosen provider |
 | `ANTHROPIC_API_KEY` | Claude (default `claude-haiku-4-5`) |
@@ -98,6 +105,14 @@ npm run build
 The standard Next.js production build and six unit tests passed in the preparation environment. Tests cover return-path protection, exact-origin checks, workspace schema rejection, progress calculations and weekly review. The prepared SQL has not been executed against a live Supabase project. Sign-in, RLS isolation, file access and account-to-account circles need live integration testing after provisioning. Browser UI testing and a fresh internet dependency install were not available in the preparation environment.
 
 Suggested integration checks after configuration: sign in as two invited accounts; prove each cannot read the other's workspace or evidence; verify non-members cannot read circle posts; test concurrent saves returning a conflict; create/join/leave/delete circles; upload/download evidence; export/import a fresh workspace; verify deletion, logout and session expiry.
+
+## Running the new features
+
+- **Grant Pro by hand** until billing is live: `insert into public.plans(user_id,tier,note) select id,'pro','founding member' from auth.users where email='member@example.com' on conflict(user_id) do update set tier='pro',until=null;` Founding-member requests land in `public.upgrade_requests`.
+- **Approve a mentor**: `update public.mentors set approved=true where user_id=(select id from auth.users where email='mentor@example.com');`
+- **Pause an offer page** that breaks the rules: `update public.offer_pages set blocked=true where slug='the-address';`
+- **Seed Browse** straight away instead of waiting for the cron: call `/api/cron/catalog?kind=idea` (and `trend`, `niche`) with `Authorization: Bearer $CRON_SECRET`. It needs `SUPABASE_SECRET_KEY` and an AI key, and adds at most one entry per kind per day.
+- **Public routes**: `/p/<address>`, `/api/public/signup` and `/api/mcp` must be reachable without Vercel login. Keep production on a domain that Vercel Deployment Protection does not cover.
 
 ## Remaining integrations
 

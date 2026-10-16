@@ -49,6 +49,11 @@ import {
   Images,
   Wrench,
   FolderKanban,
+  Globe,
+  GraduationCap,
+  Landmark,
+  Plug,
+  Crown,
 } from 'lucide-react';
 import { advisers, dailyDigest, emptyWorkspace, localDay, points, progress, review, type Workspace } from './domain';
 import Circles from './circles';
@@ -60,6 +65,13 @@ import Project from './project';
 import MyStuff from './mystuff';
 import Sprint from './sprint';
 import { FeedbackWidget, Gallery, Toolkit } from './extras';
+import Browse from './browse';
+import Connect from './connect';
+import Funding from './funding';
+import Pages from './pages';
+import Mentors from './mentors';
+import Upgrade from './upgrade';
+import { blankPlan, type PlanInfo } from './plans';
 import type { Ctx, Focus, AiResult } from './ui';
 const uid = () => crypto.randomUUID(),
   now = () => new Date().toISOString();
@@ -73,23 +85,28 @@ const paths = [
 ];
 const nav: { id: string; label: string; icon: any; section?: string }[] = [
   { id: 'home', label: 'Overview', icon: LayoutDashboard },
-  { id: 'ideas', label: 'Ideas', icon: Lightbulb, section: 'DISCOVER' },
+  { id: 'browse', label: 'Browse', icon: Compass, section: 'DISCOVER' },
+  { id: 'ideas', label: 'Ideas', icon: Lightbulb },
   { id: 'agents', label: 'Agents', icon: Wand2 },
   { id: 'sprint', label: 'Launch Sprint', icon: Rocket },
   { id: 'about', label: 'About me', icon: UserRound },
   { id: 'quests', label: 'My quests', icon: Target, section: 'BUILD' },
   { id: 'customers', label: 'First customers', icon: Handshake },
+  { id: 'pages', label: 'Offer pages', icon: Globe },
   { id: 'nova', label: 'Talk to Nova', icon: Sparkles },
   { id: 'board', label: 'Advisory board', icon: Users },
   { id: 'journal', label: 'Progress journal', icon: BookOpen },
   { id: 'challenges', label: 'Challenge studio', icon: Trophy },
   { id: 'circles', label: 'My circles', icon: MessageCircle },
+  { id: 'mentors', label: 'Office hours', icon: GraduationCap },
   { id: 'meetings', label: 'Meeting room', icon: Video },
   { id: 'mystuff', label: 'My stuff', icon: FolderOpen, section: 'LIBRARY' },
   { id: 'gallery', label: 'Build gallery', icon: Images },
+  { id: 'funding', label: 'Funding & perks', icon: Landmark },
+  { id: 'connect', label: 'Connect your AI', icon: Plug },
   { id: 'toolkit', label: 'Builder toolkit', icon: Wrench },
 ];
-const hiddenPages: Record<string, string> = { project: 'Project', settings: 'Settings & privacy' };
+const hiddenPages: Record<string, string> = { project: 'Project', settings: 'Settings & privacy', upgrade: 'NextMade Pro' };
 const challenges = [
   {
     id: 'first-offer',
@@ -202,7 +219,8 @@ export default function Platform({ displayName }: { displayName: string }) {
     [draftAnalysis, setDraftAnalysis] = useState(''),
     [formError, setFormError] = useState(''),
     [focus, setFocus] = useState<Focus>({}),
-    [visit, setVisit] = useState(0);
+    [visit, setVisit] = useState(0),
+    [plan, setPlan] = useState<PlanInfo & { requested?: boolean; ready?: boolean }>(blankPlan);
   const dialog = useRef<HTMLDialogElement>(null),
     lock = useRef(false),
     recognition = useRef<any>(null),
@@ -227,8 +245,21 @@ export default function Platform({ displayName }: { displayName: string }) {
       setLoadError(e instanceof Error ? e.message : 'Could not open workspace.');
     }
   }
+  async function loadPlan() {
+    try {
+      const r = await fetch('/api/plan');
+      const b: any = await r.json();
+      if (r.ok) setPlan({ tier: b.tier === 'pro' ? 'pro' : 'free', aiToday: b.aiToday || 0, researchUsed: b.researchUsed || 0, requested: !!b.requested, ready: !!b.ready, loaded: true });
+    } catch {
+      /* plan stays Free */
+    }
+  }
+  useEffect(() => {
+    if (page === 'upgrade') loadPlan();
+  }, [page]);
   useEffect(() => {
     load();
+    loadPlan();
     return () => {
       clearTimeout(toastTimer.current);
       recognition.current?.abort();
@@ -570,7 +601,7 @@ export default function Platform({ displayName }: { displayName: string }) {
       {icon}
     </button>
   );
-  const ctx: Ctx = { data, save, saving, thinking, aiReady, notify, formatDate, go, focus, call, firstName };
+  const ctx: Ctx = { data, save, saving, thinking, aiReady, notify, formatDate, go, focus, call, firstName, plan, refreshPlan: loadPlan };
   const intro = (
     <>
       <div className="eyebrow">
@@ -659,6 +690,11 @@ export default function Platform({ displayName }: { displayName: string }) {
             See your weekly reflection <ArrowUpRight size={14} />
           </button>
         </div>
+        <button className={'nav-item nb-pro-nav ' + (page === 'upgrade' ? 'active' : '')} onClick={() => go('upgrade')}>
+          <Crown size={18} />
+          {plan.tier === 'pro' ? 'NextMade Pro' : 'Upgrade to Pro'}
+          {plan.tier === 'pro' && <span className="tiny-new">PRO</span>}
+        </button>
         <button className={'nav-item settings-nav ' + (page === 'settings' ? 'active' : '')} onClick={() => go('settings')}>
           <Settings size={18} />
           Settings & privacy
@@ -1489,6 +1525,12 @@ export default function Platform({ displayName }: { displayName: string }) {
           {page === 'sprint' && <Sprint key={'sprint' + visit} ctx={ctx} />}
           {page === 'gallery' && <Gallery ctx={ctx} />}
           {page === 'toolkit' && <Toolkit />}
+          {page === 'browse' && <Browse key={'browse' + visit} ctx={ctx} />}
+          {page === 'connect' && <Connect key={'connect' + visit} ctx={ctx} />}
+          {page === 'funding' && <Funding key={'funding' + visit} ctx={ctx} />}
+          {page === 'pages' && <Pages key={'pages' + visit} ctx={ctx} />}
+          {page === 'mentors' && <Mentors key={'mentors' + visit} ctx={ctx} />}
+          {page === 'upgrade' && <Upgrade key={'upgrade' + visit} ctx={ctx} />}
           {page === 'customers' && (
             <Customers
               data={data}

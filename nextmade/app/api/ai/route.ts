@@ -7,7 +7,7 @@ import { aiReady, generateRich, researchReady, AiError } from '../../../lib/ai';
 export const dynamic = 'force-dynamic';
 
 const schema = z.object({
-  mode: z.enum(['chat', 'board', 'meeting', 'offer', 'outreach', 'experiment', 'agent', 'report', 'feed']),
+  mode: z.enum(['chat', 'board', 'meeting', 'offer', 'outreach', 'experiment', 'agent', 'report', 'feed', 'funding', 'perks']),
   text: z.string().max(20000).default(''),
   advisers: z.array(z.string()).max(6).default([]),
   agent: z.string().max(60).optional(),
@@ -26,6 +26,10 @@ const extra: Record<string, string> = {
     'Give concise perspectives for selected advisers, a synthesis, strongest objection, evidence gaps, smallest test and proposed next commitment. These are AI advisers, not directors.',
   meeting:
     'Summarize supplied notes only. Separate explicit decisions from proposals. Mark uncertain owners and dates. Produce draft minutes, open questions and proposed actions for review.',
+  funding:
+    'The request contains a list of Canadian funding programmes and supports (JSON) and an optional note. Using the member founder profile, goals and projects, pick the 3 to 5 programmes that fit best right now. For each: why it fits, the eligibility points they must confirm (age, residency, incorporation, revenue, location), what to prepare, and one first action this week. Then name programmes that look tempting but likely do not fit, and why. Use only the programmes listed; never invent amounts, deadlines or eligibility rules, and tell them to confirm current terms on the official page. Use markdown headings and bullets.',
+  perks:
+    'The request contains a list of startup credit programmes (JSON) and a note about what the member is building. Recommend which to apply for and in what order, based on their project and stage: why each helps, eligibility to confirm, and what to have ready. Flag ones that need investor or accelerator backing. Use only the programmes listed and never invent credit amounts. Use markdown headings and bullets.',
   chat: 'Reply conversationally under 200 words unless asked for detail. Ask one useful question if unclear.',
 };
 
@@ -43,6 +47,13 @@ export async function POST(req: Request) {
   }
   const agent = b.mode === 'agent' ? agentById(b.agent || '') : undefined;
   if (b.mode === 'agent' && !agent) return Response.json({ error: 'Unknown agent.' }, { status: 400 });
+  if (b.mode === 'perks') {
+    try {
+      if ((await rpc('my_plan')) !== 'pro') return Response.json({ error: 'The perk planner is part of Pro.' }, { status: 403 });
+    } catch {
+      return Response.json({ error: 'The perk planner is part of Pro.' }, { status: 403 });
+    }
+  }
   if (!b.text.trim() && !['feed', 'agent', 'report'].includes(b.mode))
     return Response.json({ error: 'Enter a message or meeting notes.' }, { status: 400 });
   if (!aiReady())
@@ -97,7 +108,7 @@ export async function POST(req: Request) {
     .join('\n');
   const instruction = agent ? agent.instruction : b.mode === 'report' ? reportInstruction : b.mode === 'feed' ? feedInstruction : extra[b.mode];
   const research = (b.mode === 'report' || !!agent?.research) && researchReady();
-  const long = b.mode === 'agent' || b.mode === 'report' || b.mode === 'feed';
+  const long = b.mode === 'agent' || b.mode === 'report' || b.mode === 'feed' || b.mode === 'funding' || b.mode === 'perks';
 
   try {
     const { text, sources } = await generateRich({

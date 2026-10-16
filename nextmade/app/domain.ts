@@ -211,6 +211,7 @@ export const stateSchema = z
     runs: z.array(runSchema).max(150).default([]),
     feed: z.object({ day: z.string().max(30), items: z.array(feedItemSchema).max(12) }).default({ day: '', items: [] }),
     sprint: sprintSchema.nullable().default(null),
+    bookmarks: z.array(z.string().max(100)).max(300).default([]),
     files: z.array(z.object({ id, name: short, size: z.number().nonnegative(), created: z.string().max(40) })).max(100),
   })
   .strict();
@@ -233,6 +234,7 @@ export function emptyWorkspace(name = ''): Workspace {
     runs: [],
     feed: { day: '', items: [] },
     sprint: null,
+    bookmarks: [],
     files: [],
   };
 }
