@@ -42,10 +42,25 @@ import {
   MessageCircle,
   Handshake,
   Mail,
+  Wand2,
+  Rocket,
+  FolderOpen,
+  UserRound,
+  Images,
+  Wrench,
+  FolderKanban,
 } from 'lucide-react';
 import { advisers, dailyDigest, emptyWorkspace, localDay, points, progress, review, type Workspace } from './domain';
 import Circles from './circles';
 import Customers from './customers';
+import Ideas from './ideas';
+import Agents from './agents';
+import AboutMe from './founder';
+import Project from './project';
+import MyStuff from './mystuff';
+import Sprint from './sprint';
+import { FeedbackWidget, Gallery, Toolkit } from './extras';
+import type { Ctx, Focus, AiResult } from './ui';
 const uid = () => crypto.randomUUID(),
   now = () => new Date().toISOString();
 const paths = [
@@ -56,9 +71,13 @@ const paths = [
   'Launch a product',
   'Build my personal brand',
 ];
-const nav = [
+const nav: { id: string; label: string; icon: any; section?: string }[] = [
   { id: 'home', label: 'Overview', icon: LayoutDashboard },
-  { id: 'quests', label: 'My quests', icon: Target },
+  { id: 'ideas', label: 'Ideas', icon: Lightbulb, section: 'DISCOVER' },
+  { id: 'agents', label: 'Agents', icon: Wand2 },
+  { id: 'sprint', label: 'Launch Sprint', icon: Rocket },
+  { id: 'about', label: 'About me', icon: UserRound },
+  { id: 'quests', label: 'My quests', icon: Target, section: 'BUILD' },
   { id: 'customers', label: 'First customers', icon: Handshake },
   { id: 'nova', label: 'Talk to Nova', icon: Sparkles },
   { id: 'board', label: 'Advisory board', icon: Users },
@@ -66,7 +85,11 @@ const nav = [
   { id: 'challenges', label: 'Challenge studio', icon: Trophy },
   { id: 'circles', label: 'My circles', icon: MessageCircle },
   { id: 'meetings', label: 'Meeting room', icon: Video },
+  { id: 'mystuff', label: 'My stuff', icon: FolderOpen, section: 'LIBRARY' },
+  { id: 'gallery', label: 'Build gallery', icon: Images },
+  { id: 'toolkit', label: 'Builder toolkit', icon: Wrench },
 ];
+const hiddenPages: Record<string, string> = { project: 'Project', settings: 'Settings & privacy' };
 const challenges = [
   {
     id: 'first-offer',
@@ -177,7 +200,9 @@ export default function Platform({ displayName }: { displayName: string }) {
     [search, setSearch] = useState(''),
     [filter, setFilter] = useState('all'),
     [draftAnalysis, setDraftAnalysis] = useState(''),
-    [formError, setFormError] = useState('');
+    [formError, setFormError] = useState(''),
+    [focus, setFocus] = useState<Focus>({}),
+    [visit, setVisit] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null),
     lock = useRef(false),
     recognition = useRef<any>(null),
@@ -252,8 +277,11 @@ export default function Platform({ displayName }: { displayName: string }) {
       lock.current = false;
     }
   }
-  const go = (id: string) => {
+  const go = (id: string, f: Focus = {}) => {
+    setFocus(f);
+    setVisit((v) => v + 1);
     setPage(id);
+    window.scrollTo?.({ top: 0 });
     setMobile(false);
     setSearch('');
     setFilter('all');
@@ -378,6 +406,20 @@ export default function Platform({ displayName }: { displayName: string }) {
       const b: any = await r.json();
       if (!r.ok) throw new Error(b.error);
       return b.text as string;
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Session unavailable.');
+      return null;
+    } finally {
+      setThinking(false);
+    }
+  }
+  async function call(body: Record<string, unknown>): Promise<AiResult | null> {
+    setThinking(true);
+    try {
+      const r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const b: any = await r.json();
+      if (!r.ok) throw new Error(b.error);
+      return { text: String(b.text || ''), sources: Array.isArray(b.sources) ? b.sources : [], researched: !!b.researched };
     } catch (e) {
       notify(e instanceof Error ? e.message : 'Session unavailable.');
       return null;
@@ -528,6 +570,7 @@ export default function Platform({ displayName }: { displayName: string }) {
       {icon}
     </button>
   );
+  const ctx: Ctx = { data, save, saving, thinking, aiReady, notify, formatDate, go, focus, call, firstName };
   const intro = (
     <>
       <div className="eyebrow">
@@ -593,11 +636,15 @@ export default function Platform({ displayName }: { displayName: string }) {
         <div className="workspace-label">YOUR WORKSPACE</div>
         <nav aria-label="Workspace">
           {nav.map((n) => (
-            <button key={n.id} className={page === n.id ? 'nav-item active' : 'nav-item'} onClick={() => go(n.id)}>
-              <n.icon size={19} />
-              {n.label}
-              {n.id === 'nova' && <span className="tiny-new">AI</span>}
-            </button>
+            <div key={n.id} className="nm-nav-wrap">
+              {n.section && <div className="nm-nav-section">{n.section}</div>}
+              <button className={page === n.id || (page === 'project' && n.id === 'quests') ? 'nav-item active' : 'nav-item'} onClick={() => go(n.id)}>
+                <n.icon size={19} />
+                {n.label}
+                {n.id === 'nova' && <span className="tiny-new">AI</span>}
+                {n.id === 'sprint' && data.sprint && <span className="tiny-new">ON</span>}
+              </button>
+            </div>
           ))}
         </nav>
         <div className="sidebar-note">
@@ -636,7 +683,7 @@ export default function Platform({ displayName }: { displayName: string }) {
             </button>
             <span>Workspace</span>
             <ChevronRight size={13} />
-            <strong>{nav.find((n) => n.id === page)?.label || 'Settings & privacy'}</strong>
+            <strong>{nav.find((n) => n.id === page)?.label || hiddenPages[page] || 'Settings & privacy'}</strong>
           </div>
           <div className="top-right">
             <span className="saved-status">
@@ -683,6 +730,32 @@ export default function Platform({ displayName }: { displayName: string }) {
                   </button>
                 ) : null;
               })()}
+              <div className="nm-home-strip">
+                <button className="card" onClick={() => go('ideas')}>
+                  <Lightbulb size={19} />
+                  <span>
+                    <small>TODAY’S IDEA</small>
+                    <strong>{data.feed.day === localDay() && data.feed.items[0] ? data.feed.items[0].title : 'See ideas matched to you'}</strong>
+                  </span>
+                  <ArrowRight size={15} />
+                </button>
+                <button className="card" onClick={() => go('sprint')}>
+                  <Rocket size={19} />
+                  <span>
+                    <small>LAUNCH SPRINT</small>
+                    <strong>{data.sprint ? `${data.sprint.done.length} of 7 steps done` : 'Idea to business in 7 days'}</strong>
+                  </span>
+                  <ArrowRight size={15} />
+                </button>
+                <button className="card" onClick={() => go('about', data.founder.archetype ? {} : { tab: 'quiz' })}>
+                  <UserRound size={19} />
+                  <span>
+                    <small>ABOUT ME</small>
+                    <strong>{data.founder.archetype ? 'Builder style set · edit profile' : 'Find your builder style'}</strong>
+                  </span>
+                  <ArrowRight size={15} />
+                </button>
+              </div>
               <div className="stats-row">
                 <div>
                   <span className="stat-icon sage">
@@ -898,7 +971,11 @@ export default function Platform({ displayName }: { displayName: string }) {
                             {g.paused ? <Play size={16} /> : <Pause size={16} />}
                           </button>
                         </div>
-                        <h3>{g.title}</h3>
+                        <h3>
+                          <button className="nm-link" onClick={() => go('project', { goalId: g.id })}>
+                            {g.title}
+                          </button>
+                        </h3>
                         {g.why && <p>{g.why}</p>}
                         <div className="progress-meta">
                           <span>
@@ -945,6 +1022,9 @@ export default function Platform({ displayName }: { displayName: string }) {
                             <Calendar size={13} />
                             {formatDate(g.due)}
                           </span>
+                          <button className="text-btn" onClick={() => go('project', { goalId: g.id })}>
+                            Open project <FolderKanban size={14} />
+                          </button>
                           <button className="text-btn" onClick={() => open('task')}>
                             Add commitment <Plus size={14} />
                           </button>
@@ -1401,6 +1481,14 @@ export default function Platform({ displayName }: { displayName: string }) {
             </>
           )}
           {page === 'circles' && <Circles name={firstName} />}
+          {page === 'ideas' && <Ideas key={'ideas' + visit} ctx={ctx} />}
+          {page === 'agents' && <Agents key={'agents' + visit} ctx={ctx} />}
+          {page === 'about' && <AboutMe key={'about' + visit} ctx={ctx} />}
+          {page === 'project' && <Project key={'project' + visit} ctx={ctx} />}
+          {page === 'mystuff' && <MyStuff key={'mystuff' + visit} ctx={ctx} />}
+          {page === 'sprint' && <Sprint key={'sprint' + visit} ctx={ctx} />}
+          {page === 'gallery' && <Gallery ctx={ctx} />}
+          {page === 'toolkit' && <Toolkit />}
           {page === 'customers' && (
             <Customers
               data={data}
@@ -1895,6 +1983,7 @@ export default function Platform({ displayName }: { displayName: string }) {
           </>
         )}
       </dialog>
+      <FeedbackWidget page={page} notify={notify} />
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />
