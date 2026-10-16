@@ -656,10 +656,13 @@ export default function Platform({ displayName }: { displayName: string }) {
             go('home');
           }}
         >
-          <span className="brand-mark">
-            n<span />
+          <svg className="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+            <path className="brand-mark-rise" d="M58 86V38A15 15 0 0 1 88 38V86" />
+            <path d="M12 86V68A10 10 0 0 1 32 68V86M32 86V52A13 13 0 0 1 58 52V86" />
+          </svg>
+          <span className="brand-word">
+            next<span className="brand-period">made</span>
           </span>
-          nextmade<span className="brand-period">.</span>
         </a>
         <button className="mobile-close icon-btn" aria-label="Close menu" onClick={() => setMobile(false)}>
           <X />
